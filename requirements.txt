@@ -1,0 +1,8 @@
+backoff==2.2.1
+matplotlib==3.8.0
+numpy==1.23.5
+openai==1.17.0
+pandas==2.0.3
+sympy==1.12
+tqdm==4.65.0
+ipython==8.23.0
