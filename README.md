@@ -2,6 +2,8 @@
 
 [![arXiv](https://img.shields.io/badge/arXiv-2405.15143-b31b1b.svg)](https://arxiv.org/abs/2405.15143)
 [![Website](https://img.shields.io/badge/Website-conglu.co.uk-007bff)](https://www.conglu.co.uk/IntelligentGoExplore)
+[![Twitter](https://badgen.net/badge/icon/twitter?icon=twitter&label)](https://twitter.com/jeffclune/status/1797541076024308135)
+
 <p align="center">
   <img src="figs/ige.png" style="width: 80%;" />
 </p>
