@@ -45,6 +45,7 @@ pip install textworld
 - Each environment is one clean file, containing the environment, IGE, baselines, and prompts.
 - By default, all runs are enabled, comment out baselines that you don't want.
 - Ensure that `OPENAI_API_KEY` is set in the environment variables.
+- To add a new environment or domain, we recommend cloning a `run.py` file, ensuring the random agent baseline works without problem, and then moving onto IGE.
 
 ### Game of 24
 
