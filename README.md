@@ -14,7 +14,7 @@ pretrained foundation models into all stages of the Go-Explore algorithm, enabli
 explore in complex environments.
 
 **Intelligent Go-Explore: Standing on the Shoulders of Giant Foundation Models**  
-*Cong Lu, Shengran Hu, Jeff Clune*
+*Cong Lu, Shengran Hu, Jeff Clune. ICLR, 2025.*
 
 ---
 
