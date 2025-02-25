@@ -13,7 +13,8 @@ Intelligent Go-Explore (IGE) integrates the intelligence and internalized human 
 pretrained foundation models into all stages of the Go-Explore algorithm, enabling foundation model agents to robustly
 explore in complex environments.
 
-**Intelligent Go-Explore: Standing on the Shoulders of Giant Foundation Models**  
+[**Intelligent Go-Explore: Standing on the Shoulders of Giant Foundation Models** ](https://arxiv.org/abs/2405.15143) 
+
 *Cong Lu, Shengran Hu, Jeff Clune. ICLR, 2025.*
 
 ---
