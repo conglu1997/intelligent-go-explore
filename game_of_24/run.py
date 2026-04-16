@@ -130,9 +130,11 @@ def get_index_from_gpt(
         model,
         system_message,
         print_response=PRINT_LLM_DEBUG,
-        msg_history=[],
+        msg_history=None,
         chat_history_len=5,
 ):
+    if msg_history is None:
+        msg_history = []
     new_msg_history = msg_history + [{"role": "user", "content": msg}]
     response = client.chat.completions.create(
         model=model,
@@ -509,12 +511,20 @@ def run_trial(init_state, target_number, max_actions, agent_class, model):
     return None, agent.total_cost, num_states_in_archive
 
 
+def run_trials(inputs, use_multiprocessing, max_workers):
+    if use_multiprocessing:
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            return list(executor.map(run_trial, *zip(*inputs)))
+
+    return [run_trial(*args) for args in inputs]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--min_idx', type=int, default=900)
     parser.add_argument('--num_problems', type=int, default=100)
     parser.add_argument('--max_actions', type=int, default=700)
-    parser.add_argument('--multiprocessing', action='store_true', default=True)
+    parser.add_argument('--multiprocessing', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--debug_mode', action='store_true', default=False)
     parser.add_argument('--save_path', type=str, default='time_to_success.json')
     parser.add_argument('--model', type=str,
@@ -528,7 +538,6 @@ def main():
 
     max_workers = os.cpu_count() if args.multiprocessing else 1
     print(f'Using {max_workers} workers')
-    executor = ProcessPoolExecutor(max_workers=max_workers)
 
     task = Game24Task()
     target_number = 24
@@ -549,7 +558,7 @@ def main():
 
         inputs = [task.get_input(idx=idx) for idx in range(args.min_idx, args.min_idx + args.num_problems)]
         inputs = [(x, target_number, args.max_actions, agent, args.model) for x in inputs]
-        results = executor.map(run_trial, *zip(*inputs))
+        results = run_trials(inputs, args.multiprocessing, max_workers)
 
         for result in tqdm.tqdm(results, total=args.num_problems):
             if result[0] is not None:
