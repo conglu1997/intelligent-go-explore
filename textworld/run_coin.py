@@ -310,7 +310,7 @@ class Reflexion(NaiveLLM):
 
     def reset_state(self):
         self.reflect_mode = True
-        self.reflexion_queue.append((self.acts_queue, self.obs_queue))
+        self.reflexion_queue.append((copy.deepcopy(self.acts_queue), copy.deepcopy(self.obs_queue)))
 
         self.obs_queue = copy.deepcopy(self.init_obs_queue)
         self.acts_queue = []
@@ -453,10 +453,18 @@ def evaluate_single_performance(env_id, agent_name, agent, num_trials=1, max_act
     return success, game_state['won'], (agent.total_cost, j * max_actions_per + actions_taken), agent_name, env_id
 
 
+def run_evaluations(inputs, use_multiprocessing, max_workers):
+    if use_multiprocessing:
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            return list(executor.map(evaluate_single_performance, *zip(*inputs)))
+
+    return [evaluate_single_performance(*args) for args in inputs]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--game_dir', type=str, default='textworld/tw_games/coin_collector')
-    parser.add_argument('--multiprocessing', action='store_true', default=True)
+    parser.add_argument('--multiprocessing', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--save_dir', type=str, default='results/')
     parser.add_argument('--debug_mode', action='store_true', default=False)
     parser.add_argument('--model',
@@ -481,7 +489,6 @@ def main():
 
     max_workers = len(env_ids) if args.multiprocessing else 1
     print(f'Using {max_workers} workers')
-    executor = ProcessPoolExecutor(max_workers=max_workers)
 
     for agent_name, agent_type, num_trials, max_actions_per in agent_types:
         total_num = 0
@@ -491,12 +498,14 @@ def main():
 
         inputs = [(env_id, agent_name, agent_type(max_steps, agent_name), num_trials, max_actions_per) for env_id in
                   env_ids]
-        results = list(executor.map(evaluate_single_performance, *zip(*inputs)))
+        results = run_evaluations(inputs, args.multiprocessing, max_workers)
 
         for res in results:
             try:
+                env_dir = os.path.basename(os.path.dirname(res[-1]))
+                env_file = os.path.basename(res[-1])
                 file_path = os.path.join(args.save_dir,
-                                         f"{agent_name}/{res[-1].split('/')[-2]}/{res[-1].split('/')[-1]}.pkl")
+                                         f"{agent_name}/{env_dir}/{env_file}.pkl")
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
                 with open(file_path, 'wb') as f:
                     pickle.dump(res, f)

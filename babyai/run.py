@@ -116,9 +116,11 @@ def get_index_from_gpt(
         model,
         system_message,
         print_response=PRINT_LLM_DEBUG,
-        msg_history=[],
+        msg_history=None,
         chat_history_len=3,
 ):
+    if msg_history is None:
+        msg_history = []
     new_msg_history = msg_history + [{"role": "user", "content": msg}]
     response = client.chat.completions.create(
         model=model,
@@ -405,12 +407,20 @@ def evaluate_single_performance(env, seed, agent, num_trials=1, max_actions_per=
     return success, total_reward, agent.total_cost, num_states_in_archive
 
 
+def run_evaluations(inputs, use_multiprocessing, max_workers):
+    if use_multiprocessing:
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            return list(executor.map(evaluate_single_performance, *zip(*inputs)))
+
+    return [evaluate_single_performance(*args) for args in inputs]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--env_name', type=str, default='BabyAI-MixedTestLocal-v0')
     parser.add_argument('--min_seed', type=int, default=0)
     parser.add_argument('--max_seed', type=int, default=25)
-    parser.add_argument('--multiprocessing', action='store_true', default=True)
+    parser.add_argument('--multiprocessing', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--debug_mode', action='store_true', default=False)
     parser.add_argument('--save_path', type=str, default='babyai_text_perf.pkl')
     parser.add_argument('--model',
@@ -423,11 +433,10 @@ def main():
         global env_types
         env_types = ['open']
         args.max_seed = 1
-        args.multi_processing = False
+        args.multiprocessing = False
 
     max_workers = os.cpu_count() if args.multiprocessing else 1
     print(f'Using {max_workers} workers')
-    executor = ProcessPoolExecutor(max_workers=max_workers)
 
     envs = separate_types(args.env_name)
     successes = defaultdict(list)
@@ -453,7 +462,7 @@ def main():
 
             inputs = [(copy.deepcopy(env), seed, agent_type(env.env.max_steps), num_trials, max_actions_per) for seed in
                       range(args.min_seed, args.max_seed)]
-            results = list(executor.map(evaluate_single_performance, *zip(*inputs)))
+            results = run_evaluations(inputs, args.multiprocessing, max_workers)
 
             for success, _, cost, num_states in tqdm.tqdm(results):
                 total_success += max(success)
